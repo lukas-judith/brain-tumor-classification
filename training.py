@@ -36,11 +36,28 @@ class TrainingAlgorithm:
             save_pickle(dataset_test, "dataset_test.pkl")
         else:
             dataset_train = load_pickle("dataset_train.pkl")
+            dataset_test = load_pickle("dataset_test.pkl")
 
+        self.dataset_train = dataset_train
+        self.dataset_test = dataset_test
         # create dataloader
         self.train_loader = get_dataloader(dataset_train, batch_size=args.batch_size)
 
     def train(self):
+
+        num_params = self.model.get_num_params()
+        print("\nStarting training...")
+        print(f"Model: {self.model.name} with {num_params} trainable parameters")
+
+        if tc.cuda.is_available():
+            device_name = "cuda"
+            print("Training on GPU\n")
+        else:
+            device_name = "cpu"
+            print("Training on CPU\n")
+
+        device = tc.device(device_name)
+        self.model.to(device)
 
         self.model.train()
         n = self.args.epochs
@@ -48,6 +65,10 @@ class TrainingAlgorithm:
         for i in range(n):
             for batch_idx, (data, targets) in enumerate(self.train_loader):
 
+                # add data and targets to device
+                data, targets = data.to(device), targets.to(device)
+
+                self.model.train()
                 self.optimizer.zero_grad()
 
                 preds = self.model(data)
@@ -56,14 +77,28 @@ class TrainingAlgorithm:
                 loss.backward()
                 self.optimizer.step()
 
-                with tc.no_grad():
-
-                    # get index of class with highest probability for each example
-                    class_predicted = tc.argmax(preds.softmax(dim=1), dim=1)
-                    class_true = tc.argmax(targets, dim=1)
-                    # compute accuracy
-                    acc = tc.sum(class_predicted == class_true) / class_true.shape[0]
-
                 # as a first check, print loss and accuracy on training set
                 if batch_idx % 10 == 0:
-                    print(f"loss: {loss}, accuracy: {acc}")
+
+                    print(f"epoch {i+1}, batch {batch_idx+1} | loss: {loss}")
+
+                    with tc.no_grad():
+
+                        self.model.eval()
+                        # compute accuracy on subset of training and test set
+                        # using a sample size of n
+                        n = 200
+                        acc_train = compute_accuracy(
+                            self.model,
+                            self.dataset_train.data,
+                            self.dataset_train.labels,
+                            n=n,
+                        )
+                        acc_test = compute_accuracy(
+                            self.model,
+                            self.dataset_test.data,
+                            self.dataset_test.labels,
+                            n=n,
+                        )
+
+                    print(f"train accuracy: {acc_train}, test accuracy: {acc_test}")
