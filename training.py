@@ -45,6 +45,10 @@ class TrainingAlgorithm:
 
     def train(self):
 
+        # create directory for saving checkpoints
+        save_dir = create_save_dir()
+        print(f"Saving checkpoints at {save_dir}")
+
         num_params = self.model.get_num_params()
         print("\nStarting training...")
         print(f"Model: {self.model.name} with {num_params} trainable parameters")
@@ -62,7 +66,7 @@ class TrainingAlgorithm:
         self.model.train()
         n = self.args.epochs
 
-        for i in range(n):
+        for epoch in range(n):
             for batch_idx, (data, targets) in enumerate(self.train_loader):
 
                 # add data and targets to device
@@ -80,7 +84,7 @@ class TrainingAlgorithm:
                 # as a first check, print loss and accuracy on training set
                 if batch_idx % 10 == 0:
 
-                    print(f"epoch {i+1}, batch {batch_idx+1} | loss: {loss}")
+                    print(f"epoch {epoch+1}, batch {batch_idx+1} | loss: {loss}")
 
                     with tc.no_grad():
 
@@ -102,3 +106,12 @@ class TrainingAlgorithm:
                         )
 
                     print(f"train accuracy: {acc_train}, test accuracy: {acc_test}")
+
+            # save checkpoint after each model
+            save_path = os.path.join(save_dir, f"epoch{epoch+1}.pth")
+            state = {
+                "epoch": epoch + 1,
+                "state_dict": self.model.state_dict(),
+                "optimizer": self.optimizer.state_dict(),
+            }
+            tc.save(state, save_path)

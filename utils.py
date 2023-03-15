@@ -1,5 +1,7 @@
 import os
 import pickle
+import re
+import time
 import numpy as np
 
 from PIL import Image, ImageOps
@@ -97,3 +99,37 @@ def compute_accuracy(model, data, targets, n):
     class_true = tc.argmax(targets, dim=1)
     accuracy = tc.sum(class_pred == class_true) / class_true.shape[0]
     return accuracy
+
+
+def create_save_dir():
+    now = time.strftime("%Y-%m-%d_%H-%M-%S")
+    path = "training_results_" + now
+    os.mkdir(path)
+    return path
+
+
+def get_latest_epoch_path(dir_):
+    """
+    Given a directory, extract the file path of the latest training checkpoint.
+    """
+    files = os.listdir(dir_)
+    # filter out all files that are not training checkpoints, using reg. expr.
+    pattern = re.compile(r"^epoch\d+\.pth$")
+    checkpoints = [f for f in files if pattern.match(f)]
+    # extract epoch numbers
+    epochs = [int(f.split("epoch")[1].split(".pth")[0]) for f in checkpoints]
+    assert len(epochs) == len(checkpoints)
+    latest_ep = checkpoints[np.argmax(epochs)]
+    return os.path.join(dir_, latest_ep)
+
+
+def load_latest_model_from_checkpoint(dir_):
+    """
+    Given a directory, load model from latest checkpoint.
+    """
+    # TODO: include other possible models aside from ConvNet
+    model = ConvNet()
+    path = get_latest_epoch_path(dir_)
+    checkpoint = tc.load(path)
+    model.load_state_dict(checkpoint["state_dict"])
+    return model
