@@ -68,7 +68,6 @@ class TrainingAlgorithm:
 
         for epoch in range(n):
             for batch_idx, (data, targets) in enumerate(self.train_loader):
-
                 # add data and targets to device
                 data, targets = data.to(device), targets.to(device)
 
@@ -81,31 +80,29 @@ class TrainingAlgorithm:
                 loss.backward()
                 self.optimizer.step()
 
-                # as a first check, print loss and accuracy on training set
-                if batch_idx % 10 == 0:
+            # as a first check, print loss and accuracy on training set
+            print(f"epoch {epoch+1} | loss: {loss}")
 
-                    print(f"epoch {epoch+1}, batch {batch_idx+1} | loss: {loss}")
+            with tc.no_grad():
 
-                    with tc.no_grad():
+                self.model.eval()
+                # compute accuracy on subset of training and test set
+                # using a sample size of n
+                n = 200
+                acc_train = compute_accuracy(
+                    self.model,
+                    self.dataset_train.data,
+                    self.dataset_train.labels,
+                    n=n,
+                )
+                acc_test = compute_accuracy(
+                    self.model,
+                    self.dataset_test.data,
+                    self.dataset_test.labels,
+                    n=n,
+                )
 
-                        self.model.eval()
-                        # compute accuracy on subset of training and test set
-                        # using a sample size of n
-                        n = 200
-                        acc_train = compute_accuracy(
-                            self.model,
-                            self.dataset_train.data,
-                            self.dataset_train.labels,
-                            n=n,
-                        )
-                        acc_test = compute_accuracy(
-                            self.model,
-                            self.dataset_test.data,
-                            self.dataset_test.labels,
-                            n=n,
-                        )
-
-                    print(f"train accuracy: {acc_train}, test accuracy: {acc_test}")
+            print(f"train accuracy: {acc_train}, test accuracy: {acc_test}")
 
             # save checkpoint after each model
             save_path = os.path.join(save_dir, f"epoch{epoch+1}.pth")

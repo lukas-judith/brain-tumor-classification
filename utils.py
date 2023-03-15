@@ -80,19 +80,27 @@ def datasets_exist():
     return os.path.exists("dataset_test.pkl") and os.path.exists("dataset_train.pkl")
 
 
-def compute_accuracy(model, data, targets, n):
+def compute_accuracy(model, data, targets, n=None):
     """
     Computes the accuracy of a classifier on a random sample of size n.
     """
-    if n > data.shape[0]:
-        raise Exception("Chosen sample size is larger than size of dataset!")
-    if not data.shape[0] == targets.shape[0]:
-        raise Exception("Number of training/test examples and labels does not match!")
+    model.eval()
+    if n is None:
+        # use entire dataset
+        data = tc.tensor(data, dtype=tc.float32)
+        targets = tc.tensor(targets, dtype=tc.float32)
+    else:
+        if n > data.shape[0]:
+            raise Exception("Chosen sample size is larger than size of dataset!")
+        if not data.shape[0] == targets.shape[0]:
+            raise Exception(
+                "Number of training/test examples and labels does not match!"
+            )
+        # generate random samples from data and targets
+        rnd_idx = np.random.choice(data.shape[0], size=n, replace=False)
+        data = tc.tensor(data[rnd_idx], dtype=tc.float32)
+        targets = tc.tensor(targets[rnd_idx], dtype=tc.float32)
 
-    # generate random samples from data and targets
-    rnd_idx = np.random.choice(data.shape[0], size=n, replace=False)
-    data = tc.tensor(data[rnd_idx], dtype=tc.float32)
-    targets = tc.tensor(targets[rnd_idx], dtype=tc.float32)
     pred = model(data)
     # true and predicted class labels
     class_pred = tc.argmax(pred, dim=1)
