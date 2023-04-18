@@ -1,6 +1,6 @@
-## Brain Tumor Classification
+## Brain Tumor Classification with Deep Learning
 
-This repository contains code from a personal project in which I implemented a CNN classifier in PyTorch and trained it on a brain tumor classification dataset found on Kaggle.
+This repository contains code from a personal project in which I implemented a CNN classifier in PyTorch and trained it on a brain tumor classification dataset I found on Kaggle.
 
 The dataset is available here: https://www.kaggle.com/datasets/sartajbhuvaji/brain-tumor-classification-mri
 
